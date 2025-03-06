@@ -14,10 +14,21 @@ function App() {
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [rememberPassword, setRememberPassword] = useState(false); // ✅ State untuk checkbox
+
+  // 🔥 Cek apakah ada password tersimpan di localStorage
+  useEffect(() => {
+    const savedPassword = localStorage.getItem("savedPassword");
+    if (savedPassword) {
+      setPassword(savedPassword);
+      setRememberPassword(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) return;
     socket.on("log", (data) => {
-      setLogs((prevLogs) => [data, ...prevLogs]); // Menyimpan semua log tanpa batas
+      setLogs((prevLogs) => [data, ...prevLogs]);
     });
 
     return () => {
@@ -28,6 +39,11 @@ function App() {
   const handleLogin = () => {
     if (password === import.meta.env.VITE_ACC_PASSWORD) {
       setIsAuthenticated(true);
+      if (rememberPassword) {
+        localStorage.setItem("savedPassword", password); // ✅ Simpan password
+      } else {
+        localStorage.removeItem("savedPassword"); // ✅ Hapus password jika tidak dicentang
+      }
     } else {
       setPassword("");
       toast.error("Password salah! 🔑", {
@@ -39,13 +55,8 @@ function App() {
   return (
     <div className="bg-black text-white min-h-screen p-6">
       {/* Toast Container */}
-      <Toaster
-        position="top-right"
-        richColors
-        duration={3000}
-        closeButton
-      />{" "}
-      {/* 🔥 Tambahkan Toaster */}
+      <Toaster position="top-right" richColors duration={3000} closeButton /> {/* 🔥 Tambahkan Toaster */}
+
       {/* Modal Password */}
       <AnimatePresence>
         {!isAuthenticated && (
@@ -75,6 +86,20 @@ function App() {
               >
                 {!visible ? "Tampilkan" : "Sembunyikan"}
               </p>
+
+              {/* ✅ Checkbox untuk menyimpan password */}
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="rememberPassword"
+                  checked={rememberPassword}
+                  onChange={() => setRememberPassword(!rememberPassword)}
+                />
+                <label htmlFor="rememberPassword" className="text-sm">
+                  Ingat Password
+                </label>
+              </div>
+
               <button
                 onClick={handleLogin}
                 className="mt-4 bg-blue-500 text-sm w-full hover:bg-blue-600 px-4 py-2 rounded text-white font-bold"
@@ -85,6 +110,7 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
       {/* Konten utama setelah login */}
       {isAuthenticated && (
         <>
