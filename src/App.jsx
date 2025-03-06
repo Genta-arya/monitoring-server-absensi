@@ -24,8 +24,15 @@ function App() {
   useEffect(() => {
     // Buat koneksi socket setelah login
     const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
-      protocols: ["websocket", "polling"],
+      reconnection: true,          // Pastikan auto-reconnect aktif
+      reconnectionAttempts: 10,    // Berapa kali mencoba reconnect sebelum menyerah
+      reconnectionDelay: 1000,     // Delay awal sebelum mencoba reconnect (ms)
+      reconnectionDelayMax: 5000,  // Delay maksimum sebelum mencoba lagi (ms)
+      timeout: 20000,              // Timeout sebelum koneksi dianggap gagal
+      autoConnect: true,           // Pastikan socket langsung connect saat dibuat
+      transports: ["websocket"],   // Pakai WebSocket dulu sebelum polling
     });
+    
 
     setSocket(newSocket);
 
