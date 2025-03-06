@@ -11,7 +11,10 @@ function App() {
 
   useEffect(() => {
     socket.on("log", (data) => {
-      setLogs((prevLogs) => [data, ...prevLogs]); // Tambah log terbaru di atas
+      setLogs((prevLogs) => {
+        const newLogs = [data, ...prevLogs];
+        return newLogs.slice(0, 10); // Hanya menyimpan 10 log terbaru
+      });
     });
 
     return () => {
@@ -27,53 +30,43 @@ function App() {
 
       {/* Filter Buttons */}
       <div className="flex gap-4 justify-center mb-6">
-        <button
-          onClick={() => setFilter("all")}
-          className={`px-5 py-2 rounded-md text-lg font-medium transition ${
-            filter === "all" ? "bg-blue-500" : "bg-gray-800 hover:bg-gray-700"
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setFilter("info")}
-          className={`px-5 py-2 rounded-md text-lg font-medium transition ${
-            filter === "info" ? "bg-sky-500" : "bg-gray-800 hover:bg-gray-700"
-          }`}
-        >
-          Info
-        </button>
-        <button
-          onClick={() => setFilter("error")}
-          className={`px-5 py-2 rounded-md text-lg font-medium transition ${
-            filter === "error" ? "bg-red-500" : "bg-gray-800 hover:bg-gray-700"
-          }`}
-        >
-          Error
-        </button>
+        {["all", "info", "error"].map((type) => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={`px-5 py-2 rounded-md text-lg font-medium transition ${
+              filter === type ? "bg-blue-500" : "bg-gray-800 hover:bg-gray-700"
+            }`}
+          >
+            {type.toUpperCase()}
+          </button>
+        ))}
       </div>
 
       {/* Log List */}
       <div className="space-y-4 max-w-3xl mx-auto">
         {logs
           .filter((log) => filter === "all" || log.level === filter)
+          .slice(0, 10) // Pastikan hanya 10 log terbaru yang ditampilkan
           .map((log, index) => (
             <div
               key={index}
-              className={`p-4 rounded-lg shadow-md border ${
+              className={`p-4 rounded-lg shadow-md border transition ${
                 log.level === "info"
-                  ? "bg-sky-900 border-sky-500"
-                  : "bg-red-900 border-red-500"
+                  ? "bg-sky-900 border-sky-500 hover:bg-sky-800"
+                  : "bg-red-900 border-red-500 hover:bg-red-800"
               }`}
             >
-              <p className="text-xs text-gray-300 font-mono">{log.timestamp}</p>
-              <p className="text-lg font-bold">
+              <p className="text-xs text-gray-400 font-mono">{log.timestamp}</p>
+              <p className="text-lg font-bold flex items-center gap-2">
                 <span
-                  className={`text-${log.level === "info" ? "sky" : "red"}-400`}
+                  className={`${
+                    log.level === "info" ? "text-sky-400" : "text-red-400"
+                  }`}
                 >
                   [{log.level.toUpperCase()}]:
-                </span>
-                {log.message}
+                </span>{" "}
+                <p>{log.message}</p>
               </p>
             </div>
           ))}
