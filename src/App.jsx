@@ -180,7 +180,7 @@ function App() {
                           >
                             [{log.level.toUpperCase()}]:
                           </span>
-                          <span className="text-sm">{log.message}</span>
+                          <span className="text-sm max-w-full text-wrap break-words">{log.message}</span>
                         </p>
                       </motion.div>
                     ))}
