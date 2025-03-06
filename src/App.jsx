@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster, toast } from "sonner";
@@ -10,7 +10,7 @@ function App() {
   const [visible, setVisible] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [socket, setSocket] = useState(null); // Simpan socket dalam state
+  const socketRef = useRef(null);
 
   // Cek apakah ada password tersimpan di localStorage
   useEffect(() => {
@@ -22,29 +22,38 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Buat koneksi socket setelah login
-    const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
-      reconnection: true, // Pastikan auto-reconnect aktif
-      reconnectionAttempts: 10, // Berapa kali mencoba reconnect sebelum menyerah
-      reconnectionDelay: 1000, // Delay awal sebelum mencoba reconnect (ms)
-      reconnectionDelayMax: 5000, // Delay maksimum sebelum mencoba lagi (ms)
-      timeout: 20000, // Timeout sebelum koneksi dianggap gagal
-      autoConnect: true, // Pastikan socket langsung connect saat dibuat
-      transports: ["websocket"], // Pakai WebSocket dulu sebelum polling
-    });
-
-    setSocket(newSocket);
-
-    newSocket.on("connect", () => setIsConnected(true));
-    newSocket.on("disconnect", () => setIsConnected(false));
-    newSocket.on("log", (data) => {
-      setLogs((prevLogs) => [data, ...prevLogs]);
-    });
-
+    if (!isAuthenticated) return; // Jangan konek kalau belum login
+  
+    // Hindari koneksi ganda
+    if (!socketRef.current) {
+      socketRef.current = io(import.meta.env.VITE_SOCKET_URL, {
+        reconnection: true,
+        transports: ["websocket"],
+      });
+  
+      socketRef.current.on("connect", () => {
+        console.log("Terhubung ke server");
+        setIsConnected(true);
+      });
+  
+      socketRef.current.on("disconnect", () => {
+        console.log("Terputus dari server");
+        setIsConnected(false);
+      });
+  
+      socketRef.current.on("log", (data) => {
+        console.log("Log diterima dari server:", data);
+        setLogs((prevLogs) => [data, ...prevLogs]);
+      });
+    }
+  
     return () => {
-      newSocket.disconnect(); // Pastikan socket disconnect saat komponen unmount
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [isAuthenticated]); // Koneksi hanya dibuat setelah login
+  }, [isAuthenticated]);
 
   const handleLogin = () => {
     if (password === import.meta.env.VITE_ACC_PASSWORD) {
