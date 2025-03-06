@@ -24,15 +24,14 @@ function App() {
   useEffect(() => {
     // Buat koneksi socket setelah login
     const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
-      reconnection: true,          // Pastikan auto-reconnect aktif
-      reconnectionAttempts: 10,    // Berapa kali mencoba reconnect sebelum menyerah
-      reconnectionDelay: 1000,     // Delay awal sebelum mencoba reconnect (ms)
-      reconnectionDelayMax: 5000,  // Delay maksimum sebelum mencoba lagi (ms)
-      timeout: 20000,              // Timeout sebelum koneksi dianggap gagal
-      autoConnect: true,           // Pastikan socket langsung connect saat dibuat
-      transports: ["websocket"],   // Pakai WebSocket dulu sebelum polling
+      reconnection: true, // Pastikan auto-reconnect aktif
+      reconnectionAttempts: 10, // Berapa kali mencoba reconnect sebelum menyerah
+      reconnectionDelay: 1000, // Delay awal sebelum mencoba reconnect (ms)
+      reconnectionDelayMax: 5000, // Delay maksimum sebelum mencoba lagi (ms)
+      timeout: 20000, // Timeout sebelum koneksi dianggap gagal
+      autoConnect: true, // Pastikan socket langsung connect saat dibuat
+      transports: ["websocket"], // Pakai WebSocket dulu sebelum polling
     });
-    
 
     setSocket(newSocket);
 
@@ -137,7 +136,7 @@ function App() {
             <>
               {/* Filter Buttons */}
               <div className="flex gap-2 flex-wrap w-full justify-center mb-6">
-                {["all", "info", "error", "query"].map((type) => (
+                {["all", "info", "error", "warn"].map((type) => (
                   <button
                     key={type}
                     onClick={() => setFilter(type)}
@@ -167,7 +166,7 @@ function App() {
                         className={`p-4 rounded-lg shadow-md border transition ${
                           log.level === "info"
                             ? "bg-sky-900 border-sky-500 hover:bg-sky-800"
-                            : log.level === "query"
+                            : log.level === "warn"
                             ? "bg-yellow-900 border-yellow-500 hover:bg-yellow-800"
                             : "bg-red-900 border-red-500 hover:bg-red-800"
                         }`}
@@ -180,14 +179,21 @@ function App() {
                             className={`${
                               log.level === "info"
                                 ? "text-sky-400"
-                                : log.level === "query"
+                                : log.level === "warn"
                                 ? "text-yellow-400"
                                 : "text-red-400"
                             }`}
                           >
-                            [{log.level.toUpperCase()}]:
+                            [
+                            {log.level === "warn"
+                              ? "QUERY"
+                              : log.level.toUpperCase()}
+                            ]:
                           </span>
-                          <span className="text-sm max-w-full text-wrap break-words">{log.message}</span>
+
+                          <span className="text-sm max-w-[80%] text-wrap break-words">
+                            {log.message}
+                          </span>
                         </p>
                       </motion.div>
                     ))}
