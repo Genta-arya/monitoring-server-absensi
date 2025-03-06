@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
+import { Toaster, toast } from "sonner"; // 🔥 Import Toast Sonner
 
 // Koneksi ke socket.io
-const socket = io("http://localhost:8081", {
+const socket = io(import.meta.env.VITE_SOCKET_URL, {
   transports: ["websocket"],
 });
 
@@ -12,7 +13,7 @@ function App() {
   const [filter, setFilter] = useState("all");
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
     if (!isAuthenticated) return;
     socket.on("log", (data) => {
@@ -25,15 +26,26 @@ function App() {
   }, [isAuthenticated]);
 
   const handleLogin = () => {
-    if (password === "smk@ketapang") {
+    if (password === import.meta.env.VITE_ACC_PASSWORD) {
       setIsAuthenticated(true);
     } else {
-      alert("Password salah!");
+      setPassword("");
+      toast.error("Password salah! 🔑", {
+        description: "Silakan coba lagi.",
+      }); // 🚀 Tampilkan notifikasi
     }
   };
 
   return (
     <div className="bg-black text-white min-h-screen p-6">
+      {/* Toast Container */}
+      <Toaster
+        position="top-right"
+        richColors
+        duration={3000}
+        closeButton
+      />{" "}
+      {/* 🔥 Tambahkan Toaster */}
       {/* Modal Password */}
       <AnimatePresence>
         {!isAuthenticated && (
@@ -51,23 +63,28 @@ function App() {
             >
               <h2 className="text-xl font-bold mb-4">🔒 Masukkan Password</h2>
               <input
-                type="password"
+                type={visible ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full p-2 rounded bg-gray-700 text-white focus:outline-none"
                 placeholder="Password..."
               />
+              <p
+                className="text-xs mt-2 text-end cursor-pointer"
+                onClick={() => setVisible(!visible)}
+              >
+                {!visible ? "Tampilkan" : "Sembunyikan"}
+              </p>
               <button
                 onClick={handleLogin}
-                className="mt-4 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded text-white font-bold"
+                className="mt-4 bg-blue-500 text-sm w-full hover:bg-blue-600 px-4 py-2 rounded text-white font-bold"
               >
-                Submit
+                Login
               </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
       {/* Konten utama setelah login */}
       {isAuthenticated && (
         <>
@@ -82,7 +99,9 @@ function App() {
                 key={type}
                 onClick={() => setFilter(type)}
                 className={`px-5 py-2 rounded-md text-lg font-medium transition ${
-                  filter === type ? "bg-blue-500" : "bg-gray-800 hover:bg-gray-700"
+                  filter === type
+                    ? "bg-blue-500"
+                    : "bg-gray-800 hover:bg-gray-700"
                 }`}
               >
                 <p className="text-xs w-24">{type.toUpperCase()}</p>
@@ -110,7 +129,9 @@ function App() {
                         : "bg-red-900 border-red-500 hover:bg-red-800"
                     }`}
                   >
-                    <p className="text-xs text-gray-200 font-mono">{log.timestamp}</p>
+                    <p className="text-xs text-gray-200 font-mono">
+                      {log.timestamp}
+                    </p>
                     <p className="text-lg font-bold flex items-center gap-2">
                       <span
                         className={`${
