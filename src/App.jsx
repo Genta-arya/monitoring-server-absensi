@@ -1,22 +1,18 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Toaster, toast } from "sonner"; // 🔥 Import Toast Sonner
-
-// Koneksi ke socket.io
-const socket = io(import.meta.env.VITE_SOCKET_URL, {
-  transports: ["websocket"],
-});
-
+import { Toaster, toast } from "sonner";
 function App() {
   const [logs, setLogs] = useState([]);
   const [filter, setFilter] = useState("all");
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [rememberPassword, setRememberPassword] = useState(false); // ✅ State untuk checkbox
+  const [rememberPassword, setRememberPassword] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [socket, setSocket] = useState(null); // Simpan socket dalam state
 
-  // 🔥 Cek apakah ada password tersimpan di localStorage
+  // Cek apakah ada password tersimpan di localStorage
   useEffect(() => {
     const savedPassword = localStorage.getItem("savedPassword");
     if (savedPassword) {
@@ -27,35 +23,44 @@ function App() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    socket.on("log", (data) => {
+
+    // Buat koneksi socket setelah login
+    const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
+      transports: ["websocket"],
+    });
+
+    setSocket(newSocket);
+
+    newSocket.on("connect", () => setIsConnected(true));
+    newSocket.on("disconnect", () => setIsConnected(false));
+    newSocket.on("log", (data) => {
       setLogs((prevLogs) => [data, ...prevLogs]);
     });
 
     return () => {
-      socket.off("log");
+      newSocket.disconnect(); // Pastikan socket disconnect saat komponen unmount
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated]); // Koneksi hanya dibuat setelah login
 
   const handleLogin = () => {
     if (password === import.meta.env.VITE_ACC_PASSWORD) {
       setIsAuthenticated(true);
       if (rememberPassword) {
-        localStorage.setItem("savedPassword", password); // ✅ Simpan password
+        localStorage.setItem("savedPassword", password);
       } else {
-        localStorage.removeItem("savedPassword"); // ✅ Hapus password jika tidak dicentang
+        localStorage.removeItem("savedPassword");
       }
     } else {
       setPassword("");
       toast.error("Password salah! 🔑", {
         description: "Silakan coba lagi.",
-      }); // 🚀 Tampilkan notifikasi
+      });
     }
   };
-
   return (
     <div className="bg-black text-white min-h-screen p-6">
       {/* Toast Container */}
-      <Toaster position="top-right" richColors duration={3000} closeButton /> {/* 🔥 Tambahkan Toaster */}
+      <Toaster position="top-right" richColors duration={3000} closeButton />
 
       {/* Modal Password */}
       <AnimatePresence>
@@ -112,70 +117,79 @@ function App() {
       </AnimatePresence>
 
       {/* Konten utama setelah login */}
-      {isAuthenticated && (
+      {isAuthenticated   && (
         <>
           <h1 className="text-3xl font-bold mb-6 text-center">
             📜 Monitoring Logger Absensi
           </h1>
 
-          {/* Filter Buttons */}
-          <div className="flex gap-2 flex-wrap w-full justify-center mb-6">
-            {["all", "info", "error", "query"].map((type) => (
-              <button
-                key={type}
-                onClick={() => setFilter(type)}
-                className={`px-5 py-2 rounded-md text-lg font-medium transition ${
-                  filter === type
-                    ? "bg-blue-500"
-                    : "bg-gray-800 hover:bg-gray-700"
-                }`}
-              >
-                <p className="text-xs w-24">{type.toUpperCase()}</p>
-              </button>
-            ))}
-          </div>
-
-          {/* Log List */}
-          <div className="space-y-4 max-w-3xl mx-auto overflow-y-auto max-h-[80vh]">
-            <AnimatePresence>
-              {logs
-                .filter((log) => filter === "all" || log.level === filter)
-                .map((log, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: -10 }} // Animasi masuk
-                    animate={{ opacity: 1, y: 0 }} // Animasi tampil
-                    exit={{ opacity: 0, y: 10 }} // Animasi keluar
-                    transition={{ duration: 0.3 }}
-                    className={`p-4 rounded-lg shadow-md border transition ${
-                      log.level === "info"
-                        ? "bg-sky-900 border-sky-500 hover:bg-sky-800"
-                        : log.level === "query"
-                        ? "bg-yellow-900 border-yellow-500 hover:bg-yellow-800"
-                        : "bg-red-900 border-red-500 hover:bg-red-800"
+          {/* 🔄 Loading jika belum terhubung ke socket */}
+          {!isConnected ? (
+            <div className="flex justify-center items-center min-h-[50vh]">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+            </div>
+          ) : (
+            <>
+              {/* Filter Buttons */}
+              <div className="flex gap-2 flex-wrap w-full justify-center mb-6">
+                {["all", "info", "error", "query"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setFilter(type)}
+                    className={`px-5 py-2 rounded-md text-lg font-medium transition ${
+                      filter === type
+                        ? "bg-blue-500"
+                        : "bg-gray-800 hover:bg-gray-700"
                     }`}
                   >
-                    <p className="text-xs text-gray-200 font-mono">
-                      {log.timestamp}
-                    </p>
-                    <p className="text-lg font-bold flex items-center gap-2">
-                      <span
-                        className={`${
+                    <p className="text-xs w-24">{type.toUpperCase()}</p>
+                  </button>
+                ))}
+              </div>
+
+              {/* Log List */}
+              <div className="space-y-4 max-w-3xl mx-auto overflow-y-auto max-h-[80vh]">
+                <AnimatePresence>
+                  {logs
+                    .filter((log) => filter === "all" || log.level === filter)
+                    .map((log, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.3 }}
+                        className={`p-4 rounded-lg shadow-md border transition ${
                           log.level === "info"
-                            ? "text-sky-400"
+                            ? "bg-sky-900 border-sky-500 hover:bg-sky-800"
                             : log.level === "query"
-                            ? "text-yellow-400"
-                            : "text-red-400"
+                            ? "bg-yellow-900 border-yellow-500 hover:bg-yellow-800"
+                            : "bg-red-900 border-red-500 hover:bg-red-800"
                         }`}
                       >
-                        [{log.level.toUpperCase()}]:
-                      </span>
-                      <span>{log.message}</span>
-                    </p>
-                  </motion.div>
-                ))}
-            </AnimatePresence>
-          </div>
+                        <p className="text-xs text-gray-200 font-mono">
+                          {log.timestamp}
+                        </p>
+                        <p className="text-sm font-bold flex items-center gap-2">
+                          <span
+                            className={`${
+                              log.level === "info"
+                                ? "text-sky-400"
+                                : log.level === "query"
+                                ? "text-yellow-400"
+                                : "text-red-400"
+                            }`}
+                          >
+                            [{log.level.toUpperCase()}]:
+                          </span>
+                          <span className="text-sm">{log.message}</span>
+                        </p>
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
