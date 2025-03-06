@@ -22,11 +22,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     // Buat koneksi socket setelah login
     const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
-      transports: ["websocket"],
+      protocols: ["websocket", "polling"],
     });
 
     setSocket(newSocket);
@@ -117,7 +115,7 @@ function App() {
       </AnimatePresence>
 
       {/* Konten utama setelah login */}
-      {isAuthenticated   && (
+      {isAuthenticated && (
         <>
           <h1 className="text-3xl font-bold mb-6 text-center">
             📜 Loging Absensi SMKN 2 KETAPANG
