@@ -21,7 +21,9 @@ function App() {
 
   return (
     <div className="bg-black text-white min-h-screen p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">📜 Monitoring Logger Absensi</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        📜 Monitoring Logger Absensi
+      </h1>
 
       {/* Filter Buttons */}
       <div className="flex gap-4 justify-center mb-6">
@@ -66,7 +68,12 @@ function App() {
             >
               <p className="text-xs text-gray-300 font-mono">{log.timestamp}</p>
               <p className="text-lg font-bold">
-                [{log.level.toUpperCase()}]: {log.message}
+                <span
+                  className={`text-${log.level === "info" ? "sky" : "red"}-400`}
+                >
+                  [{log.level.toUpperCase()}]:
+                </span>
+                {log.message}
               </p>
             </div>
           ))}
