@@ -1,3 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Poppins:wght@400;600&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  scrollbar-width: none;
+  scrollbar-color: #feb47b #f3f3f3;
+}
+

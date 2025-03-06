@@ -82,8 +82,8 @@ function App() {
                 type={visible ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 rounded bg-gray-700 text-white focus:outline-none"
-                placeholder="Password..."
+                className="w-full p-2 text-sm rounded bg-gray-700 text-white focus:outline-none"
+                placeholder="Password"
               />
               <p
                 className="text-xs mt-2 text-end cursor-pointer"
@@ -120,7 +120,7 @@ function App() {
       {isAuthenticated   && (
         <>
           <h1 className="text-3xl font-bold mb-6 text-center">
-            📜 Monitoring Logger Absensi
+            📜 Loging Absensi SMKN 2 KETAPANG
           </h1>
 
           {/* 🔄 Loading jika belum terhubung ke socket */}
